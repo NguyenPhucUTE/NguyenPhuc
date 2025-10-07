@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KhanhVyne</title>
+</head>
+<title>Hệ thống chăm sóc thú cưng</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .control, .feed, .water-level {
+    margin: 20px;
+    padding: 20px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+  }
+  .button {
+    display: block;
+    margin-bottom: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  .button:hover {
+    background-color: #45a049;
+  }
+  #header {
+    width: 1000px;
+    height: 100px;
+    color: rgb(0, 2, 3);
+    text-align: center;
+    line-height: 70px;
+  }
+  #header ul {
+    margin: 0px;
+    padding: 0px;
+  }
+  #header ul li {
+    list-style: none;
+    float: right;
+    width: 90%;
+    font-size: 50px;
+  }
+  #time {
+    font-family: tahoma;
+    height: 50px;
+    width: 1000px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    font-size: 25px;
+    padding-left: 250px;
+  }
+</style>
+<body>
+<div id="header">
+  <ul>
+    <h1><b>HỆ THỐNG CHĂM SÓC THÚ CƯNG</b></h1>
+  </ul>
+</div>
+
+<div id="time"></div>
+<script>
+function dongho() {
+  var time = new Date();
+  var gio = time.getHours();
+  var phut = time.getMinutes();
+  var giay = time.getSeconds();
+  var ngay = time.getDate();
+  var thang = time.getMonth() + 1;
+  var nam = time.getFullYear();
+  if (gio < 10) gio = "0" + gio;
+  if (phut < 10) phut = "0" + phut;
+  if (giay < 10) giay = "0" + giay;
+  if (ngay < 10) ngay = "0" + ngay;
+  if (thang < 10) thang = "0" + thang;
+  document.getElementById("time").innerHTML = gio + ":" + phut + ":" + giay + " " + ngay + "/" + thang + "/" + nam;
+  setTimeout("dongho()", 1000);
+};
+dongho();
+</script>
+
+<div class="container">
+  <div class="control">
+    <h2>Camera</h2>
+    <img src="http://192.168.1.5/mjpeg/1" alt="Camera Feed" width="320" height="240">
+  </div>
+
+  <div class="feed">
+    <h2>Feeder</h2>
+    <p><button id="feederButton" class="button1">ON</button></p>
+  </div>
+  <script>
+  document.getElementById("feederButton").addEventListener("click", function() {
+      fetch("http://192.168.1.4/26/on")
+      .then(response => response.text())
+      .then(data => {
+          console.log("Trạng thái của servo:", data);
+          if (data === "on") {
+              alert("Servo đang mở.");
+          } else if (data === "off") {
+              alert("Servo đã đóng.");
+          }
+      })
+      .catch(error => {
+          console.error("Lỗi khi gửi yêu cầu:", error);
+      });
+  });
+  </script>
+
+  <h2>Set Feed Times</h2>
+  <form action="http://192.168.1.4/set" method="POST">
+    Morning (HH:MM): <input type='text' name='onHour'>:<input type='text' name='onMinute'><br>
+    Evening (HH:MM): <input type='text' name='offHour'>:<input type='text' name='offMinute'><br>
+    <input type='submit' value='Set Timer'>
+  </form>
+
+  <div class="control">
+    <h2>Temperature & Humidity</h2>
+    <p>Temperature: <span id="nhietdo">--</span>°C</p>
+    <p>Humidity: <span id="doam">--</span>%</p>
+  </div>
+
+  <div class="water-level">
+    <h2>Water Level</h2>
+    <p>Water Level: <span id="mucnuoc">--</span> cm</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.2.10/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.10/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.2.10/firebase-analytics.js"></script>
+
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyA1Nq1PfqUB9fGQpImxEN9vao4jVO13oVM",
+  authDomain: "tt-iot-5a3bd.firebaseapp.com",
+  databaseURL: "https://tt-iot-5a3bd-default-rtdb.firebaseio.com",
+  projectId: "tt-iot-5a3bd",
+  storageBucket: "tt-iot-5a3bd.appspot.com",
+  messagingSenderId: "322433356693",
+  appId: "1:322433356693:web:3cdf13fb8647604c271c9c",
+  measurementId: "G-8QR4VMFPCN"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+firebase.analytics();
+
+var temp = document.getElementById('nhietdo');
+var dbRef = firebase.database().ref('dht11').child('Nhiet do');
+var hum = document.getElementById('doam');
+var dbRef2 = firebase.database().ref('dht11').child('Do am');
+var water = document.getElementById('mucnuoc');
+var dbRef3 = firebase.database().ref('watersensor').child('Muc nuoc');
+
+dbRef.on('value', snap => temp.innerText = snap.val());
+dbRef2.on('value', snap => hum.innerText = snap.val());
+dbRef3.on('value', snap => water.innerText = snap.val());
+</script>
+</body>
+</html>
